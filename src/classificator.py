@@ -92,10 +92,15 @@ def get_arch_inner_borders(mask, shift=40, threshold=0.3):
     # строки, в которых число белых пикселей менее 30% (порог необходим, так как не факт,
     # что до конца перекроются все дырки в арке)
     vertical_indices = np.where(np.sum(min_mask, axis=1) / min_mask.shape[1] < threshold)[0]
-    inner_top, inner_bottom = vertical_indices[0] + top + shift, vertical_indices[-1] + top + shift
 
     # аналогично, но для столбцов
     horizontal_indices = np.where(np.sum(min_mask, axis=0) / min_mask.shape[0] < threshold)[0]
+
+    # случай нераспознанного объекта (при бинаризации они слились)
+    if vertical_indices.size == 0 or horizontal_indices.size == 0:
+        return False
+
+    inner_top, inner_bottom = vertical_indices[0] + top + shift, vertical_indices[-1] + top + shift
     inner_left, inner_right = horizontal_indices[0] + left + shift, horizontal_indices[-1] + left + shift
 
     return inner_top, inner_bottom, inner_left, inner_right
@@ -144,6 +149,9 @@ def classificator(img_path):
     # получение границ прямоугольников, содержащих объекты
     notepad_borders = get_notepad_borders(notepad_img)
     arch_borders = get_arch_inner_borders(arch_img)
+
+    if not arch_borders:
+        return 'bad example', (img, arch_img, notepad_img)
 
     res = img, arch_img, notepad_img, arch_borders, notepad_borders
 
